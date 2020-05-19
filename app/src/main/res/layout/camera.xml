@@ -19,6 +19,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:background="@drawable/strokes"
+        android:id="@+id/layout_camera_small"
         android:elevation="1dp"
         android:layout_width="300px"
         android:layout_height="300px"

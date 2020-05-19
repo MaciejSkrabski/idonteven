@@ -3,7 +3,12 @@ package camera
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Rect
+import android.media.Image
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -29,10 +34,15 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
+import com.example.gettext.MainActivity
 import com.example.gettext.R
+import com.example.gettext.ui.main.MainFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.camera.*
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -44,6 +54,9 @@ class Camera:AppCompatActivity() {
     private var navController: NavController?=null
     private lateinit var outputDirectory: File
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var cropedImage: ByteArray
+    private var context = this
+    @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.camera)
@@ -54,25 +67,33 @@ class Camera:AppCompatActivity() {
             btn_decline.startAnimation(fabOpenAnim)
             btn_accept.isVisible = true
             btn_decline.isVisible= true
-            takePhoto()
+            CameraX.unbind(preview)
+
+
         }
         btn_accept.setOnClickListener{
            // navController!!.navigate(R.id.action_navigation_camera_to_navigation_mainFragment)
+
+            takePhoto()
+
         }
         btn_decline.setOnClickListener{
             btn_accept.startAnimation(fabCloseAnim)
             btn_decline.startAnimation(fabCloseAnim)
             btn_accept.isVisible = false
             btn_decline.isVisible= false
+            startCamera()
+
         }
+
         if (allPermissionsGranted()) {
             startCamera()
         } else {
             ActivityCompat.requestPermissions(
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
-        outputDirectory = getOutputDirectory()
-        cameraExecutor = Executors.newSingleThreadExecutor()
+        /*outputDirectory = getOutputDirectory()
+        cameraExecutor = Executors.newSingleThreadExecutor()*/
     }
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -82,22 +103,26 @@ class Camera:AppCompatActivity() {
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
             // Preview
-            val aspectRatio = Rational(layout_camera.width,layout_camera.height)
+           // val aspectRatio = Rational(layout_camera.width,layout_camera.height)
             val screenSize = Size(layout_camera.width,layout_camera.height)
             preview = Preview.Builder()
                 .setTargetResolution(screenSize)
                 .build()
-
+                //Image Capture
+            imageCapture = ImageCapture.Builder()
+                .build()
             // Select back camera
             val cameraSelector = CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
+
 
             try {
                 // Unbind use cases before rebinding
                 cameraProvider.unbindAll()
 
                 // Bind use cases to camera
-                camera = cameraProvider.bindToLifecycle(this,cameraSelector,preview)
+                camera = cameraProvider.bindToLifecycle(this,cameraSelector,preview,imageCapture)
                 preview?.setSurfaceProvider(layout_camera.createSurfaceProvider(camera?.cameraInfo))
+
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -105,24 +130,89 @@ class Camera:AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private fun takePhoto() {
-        // TODO
-    }
 
+    private fun takePhoto() {
+
+        // Get a stable reference of the modifiable image capture use case
+        val imageCapture = imageCapture ?: return
+
+/*        // Create timestamped output file to hold the image
+        val photoFile = File(
+            outputDirectory,
+            SimpleDateFormat(FILENAME_FORMAT, Locale.ROOT
+            ).format(System.currentTimeMillis()) + ".jpg")
+        // Create output options object which contains file + metadata
+        val outputOptions = ImageCapture.OutputFileOptions
+            .Builder(photoFile)
+            .build()*/
+
+        // Setup image capture listener which is triggered after photo has
+        // been taken
+/*        imageCapture.takePicture(
+            outputOptions, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
+
+                override fun onError(exc: ImageCaptureException) {
+                    Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
+                }
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    var photo= photoFile.absoluteFile as Image
+                    var bitmapphoto = photo.toBitmap()
+                    bitmapphoto=  cropImage(bitmapphoto,layout_camera,layout_camera_small) as Bitmap
+                    bitmapphoto as File
+
+                    val savedUri = Uri.fromFile(photoFile)
+                    val msg = "Photo capture succeeded: $savedUri"
+                    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+                    Log.d(TAG, msg)
+                }
+            })*/
+
+        imageCapture.takePicture(ContextCompat.getMainExecutor(this), object: ImageCapture.OnImageCapturedCallback() {
+            @SuppressLint("UnsafeExperimentalUsageError")
+            override fun onCaptureSuccess(image: ImageProxy) {
+               /* val rect =Rect()
+
+                 layout_camera_small.getGlobalVisibleRect(rect)
+                image.setCropRect(rect)*/
+
+
+                 cropedImage = cropImage(image.image!!.toBitmap(),layout_camera,layout_camera_small)
+                val intent = Intent(context,MainActivity::class.java)
+                intent.putExtra("imageCapture",cropedImage)
+                startActivity(intent)
+     /*          val bundle = Bundle()
+                bundle.putByteArray("cropedImage",cropedImage)
+                val mainFragment = MainFragment()
+                mainFragment.arguments = bundle*/
+                image.close()
+            }
+
+            override fun onError(exc: ImageCaptureException) {
+                Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
+            }
+        })
+    }
+    fun Image.toBitmap(): Bitmap {
+        val buffer = planes[0].buffer
+        buffer.rewind()
+        val bytes = ByteArray(buffer.capacity())
+        buffer.get(bytes)
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    }
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
             baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
-    fun getOutputDirectory(): File {
+/*    fun getOutputDirectory(): File {
         val mediaDir = externalMediaDirs.firstOrNull()?.let {
             File(it, resources.getString(R.string.app_name)).apply { mkdirs() } }
         return if (mediaDir != null && mediaDir.exists())
             mediaDir else filesDir
-    }
+    }*/
 
     companion object {
         private const val TAG = "CameraXBasic"
-        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
+      //  private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
     }
@@ -140,6 +230,31 @@ class Camera:AppCompatActivity() {
                 finish()
             }
         }
+    }
+    private fun cropImage(bitmap: Bitmap, frame: View, reference: View): ByteArray {
+        val heightOriginal = frame.height
+        val widthOriginal = frame.width
+        val heightFrame = reference.height
+        val widthFrame = reference.width
+        val leftFrame = reference.left
+        val topFrame = reference.top
+        val heightReal = bitmap.height
+        val widthReal = bitmap.width
+        val widthFinal = widthFrame * widthReal / widthOriginal
+        val heightFinal = heightFrame * heightReal / heightOriginal
+        val leftFinal = leftFrame * widthReal / widthOriginal
+        val topFinal = topFrame * heightReal / heightOriginal
+        val bitmapFinal = Bitmap.createBitmap(
+            bitmap,
+            leftFinal, topFinal, 300, 300
+        )
+        val stream = ByteArrayOutputStream()
+        bitmapFinal.compress(
+            Bitmap.CompressFormat.JPEG,
+            100,
+            stream
+        ) //100 is the best quality possibe
+        return stream.toByteArray()
     }
 
 

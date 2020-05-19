@@ -1,20 +1,21 @@
 package com.example.gettext.ui.main
 
+import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
+import com.example.gettext.MainActivity
 import com.example.gettext.R
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.android.synthetic.main.main_activity.*
+import kotlinx.android.synthetic.main.main_fragment.*
 
 
 class MainFragment : Fragment() {
+
 
     companion object {
         fun newInstance() = MainFragment()
@@ -26,17 +27,35 @@ class MainFragment : Fragment() {
                               savedInstanceState: Bundle?): View {
 
 
+
+
         val root =inflater.inflate(R.layout.main_fragment, container, false)
         return root
 
     }
 
+    override fun onResume() {
+        val activity: MainActivity? = activity as MainActivity?
+        val image =activity!!.returnCapturedImage()
+        if (image!=null) {
+            val imageRotated = image.rotate(90F)
+
+
+            layout_display_image_camera.setImageBitmap(imageRotated)
+
+
+        }
+        super.onResume()
+    }
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
 
     }
-
+    fun Bitmap.rotate(degrees: Float): Bitmap {
+        val matrix = Matrix().apply { postRotate(degrees) }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+    }
 
 
 

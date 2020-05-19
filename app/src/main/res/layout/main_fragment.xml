@@ -5,17 +5,17 @@
     android:background="@color/background"
 
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.appcompat.widget.AppCompatImageView
 
         android:id="@+id/layout_display_image_camera"
         android:background="@drawable/strokes"
         android:layout_marginTop="60dp"
-        android:layout_width="300px"
-        android:layout_height="300px"
+        android:layout_width="303px"
+        android:layout_height="303px"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/layout_text"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"></androidx.constraintlayout.widget.ConstraintLayout>
+        app:layout_constraintEnd_toEndOf="parent"></androidx.appcompat.widget.AppCompatImageView>
     <TextView
         android:textColor="@android:color/white"
         android:layout_width="wrap_content"

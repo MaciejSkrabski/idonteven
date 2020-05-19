@@ -1,9 +1,9 @@
 package com.example.gettext
 
 import android.app.Activity
-import android.content.ClipData
-import android.content.Context
-import android.content.SharedPreferences
+import android.content.*
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
@@ -17,13 +17,25 @@ import androidx.core.view.isVisible
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
+import com.example.gettext.ui.main.MainFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.main_activity.*
+import kotlinx.android.synthetic.main.main_fragment.*
 
 class MainActivity : AppCompatActivity() {
-    var navController: NavController?=null
 
+    var navController: NavController?=null
+    private var btm: Bitmap?=null
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        val extras = intent.extras
+        if(extras!=null) {
+            val bytearray = extras!!.getByteArray("imageCapture")
+             btm = BitmapFactory.decodeByteArray(bytearray, 0, bytearray!!.size)
+           // Toast.makeText(this,btm.toString(),Toast.LENGTH_LONG).show()
+
+            //
+        }
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
         setSupportActionBar(toolbar)
@@ -87,6 +99,9 @@ class MainActivity : AppCompatActivity() {
             isOpen=false
 
         }
+    }
+    fun returnCapturedImage(): Bitmap?{
+            return btm
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
