@@ -1,26 +1,24 @@
 package camera
 
+
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.media.Image
-import android.net.Uri
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.util.Log
+import android.util.Log.d
 import android.util.Rational
 import android.util.Size
-import android.view.LayoutInflater
-import android.view.TextureView
+import android.view.Surface
 import android.view.View
-import android.view.ViewGroup
 import android.view.animation.AnimationUtils
-
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -28,23 +26,14 @@ import androidx.camera.core.Camera
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-
-
 import androidx.core.view.isVisible
-import androidx.fragment.app.Fragment
 import androidx.navigation.NavController
-import androidx.navigation.Navigation
 import com.example.gettext.MainActivity
 import com.example.gettext.R
-import com.example.gettext.ui.main.MainFragment
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.camera.*
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class Camera:AppCompatActivity() {
     private var preview: Preview? = null
@@ -59,6 +48,7 @@ class Camera:AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.camera)
         val fabOpenAnim = AnimationUtils.loadAnimation(this, R.anim.fab_open)
         val fabCloseAnim = AnimationUtils.loadAnimation(this, R.anim.fab_close)
@@ -68,13 +58,18 @@ class Camera:AppCompatActivity() {
             btn_accept.isVisible = true
             btn_decline.isVisible= true
             CameraX.unbind(preview)
+            takePhoto()
 
 
         }
+
         btn_accept.setOnClickListener{
            // navController!!.navigate(R.id.action_navigation_camera_to_navigation_mainFragment)
 
-            takePhoto()
+            val intent = Intent(context,MainActivity::class.java)
+
+            intent.putExtra("imageCapture",cropedImage)
+            startActivity(intent)
 
         }
         btn_decline.setOnClickListener{
@@ -104,15 +99,22 @@ class Camera:AppCompatActivity() {
 
             // Preview
            // val aspectRatio = Rational(layout_camera.width,layout_camera.height)
-            val screenSize = Size(layout_camera.width,layout_camera.height)
+            val displayMetrics = DisplayMetrics()
+            windowManager.defaultDisplay.getMetrics(displayMetrics)
+            val screenAspectRatio = Rational(displayMetrics.widthPixels, displayMetrics.heightPixels)
+            val screenSize = Size(displayMetrics.widthPixels,displayMetrics.heightPixels)
             preview = Preview.Builder()
-                .setTargetResolution(screenSize)
+                .setTargetRotation(layout_camera.display.rotation)
+               // .setTargetAspectRatio(screenAspectRatio.toInt())
+               // .setTargetResolution(screenSize)
                 .build()
                 //Image Capture
             imageCapture = ImageCapture.Builder()
                 .build()
             // Select back camera
-            val cameraSelector = CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
+            val cameraSelector = CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .build()
 
 
             try {
@@ -121,6 +123,8 @@ class Camera:AppCompatActivity() {
 
                 // Bind use cases to camera
                 camera = cameraProvider.bindToLifecycle(this,cameraSelector,preview,imageCapture)
+
+
                 preview?.setSurfaceProvider(layout_camera.createSurfaceProvider(camera?.cameraInfo))
 
             } catch(exc: Exception) {
@@ -135,6 +139,7 @@ class Camera:AppCompatActivity() {
 
         // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
+
 
 /*        // Create timestamped output file to hold the image
         val photoFile = File(
@@ -174,17 +179,18 @@ class Camera:AppCompatActivity() {
 
                  layout_camera_small.getGlobalVisibleRect(rect)
                 image.setCropRect(rect)*/
+                d("widthImage",image.width.toString())
 
 
                  cropedImage = cropImage(image.image!!.toBitmap(),layout_camera,layout_camera_small)
-                val intent = Intent(context,MainActivity::class.java)
-                intent.putExtra("imageCapture",cropedImage)
-                startActivity(intent)
+
+
      /*          val bundle = Bundle()
                 bundle.putByteArray("cropedImage",cropedImage)
                 val mainFragment = MainFragment()
                 mainFragment.arguments = bundle*/
                 image.close()
+
             }
 
             override fun onError(exc: ImageCaptureException) {
@@ -230,23 +236,39 @@ class Camera:AppCompatActivity() {
                 finish()
             }
         }
+
     }
     private fun cropImage(bitmap: Bitmap, frame: View, reference: View): ByteArray {
         val heightOriginal = frame.height
+        d("frame.height",heightOriginal.toString())
         val widthOriginal = frame.width
         val heightFrame = reference.height
         val widthFrame = reference.width
         val leftFrame = reference.left
         val topFrame = reference.top
+
+        d("heightframe",heightFrame.toString())
+        d("widthfram",widthFrame.toString())
+        d("heightbiger",heightOriginal.toString())
+        d("widthbiger",widthOriginal.toString())
+
         val heightReal = bitmap.height
         val widthReal = bitmap.width
+        d("heightimage",heightReal.toString())
+        d("widthimage",widthReal.toString())
         val widthFinal = widthFrame * widthReal / widthOriginal
         val heightFinal = heightFrame * heightReal / heightOriginal
-        val leftFinal = leftFrame * widthReal / widthOriginal
-        val topFinal = topFrame * heightReal / heightOriginal
+        val leftFinal = (leftFrame * widthReal / widthOriginal)
+        val topFinal = (topFrame * heightReal / heightOriginal) - 75
+        d("leftFrame",leftFrame.toString())
+        d("leftFinal",leftFinal.toString())
+        d("topFrame",topFrame.toString())
+        d("topFinal",topFinal.toString())
+        d("widthtest",(widthOriginal/2-150).toString())
+
         val bitmapFinal = Bitmap.createBitmap(
             bitmap,
-            leftFinal, topFinal, 300, 300
+            leftFinal  , topFinal, 300, 300
         )
         val stream = ByteArrayOutputStream()
         bitmapFinal.compress(
