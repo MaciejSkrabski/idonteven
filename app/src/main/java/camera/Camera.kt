@@ -3,12 +3,12 @@ package camera
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
+import android.hardware.camera2.CameraManager
 import android.media.Image
 import android.os.Bundle
 import android.util.DisplayMetrics
@@ -52,13 +52,16 @@ class Camera:AppCompatActivity() {
         setContentView(R.layout.camera)
         val fabOpenAnim = AnimationUtils.loadAnimation(this, R.anim.fab_open)
         val fabCloseAnim = AnimationUtils.loadAnimation(this, R.anim.fab_close)
+
+
         btn_take_photo.setOnClickListener{
+            takePhoto()
             btn_accept.startAnimation(fabOpenAnim)
             btn_decline.startAnimation(fabOpenAnim)
             btn_accept.isVisible = true
             btn_decline.isVisible= true
             CameraX.unbind(preview)
-            takePhoto()
+
 
 
         }
@@ -67,8 +70,12 @@ class Camera:AppCompatActivity() {
            // navController!!.navigate(R.id.action_navigation_camera_to_navigation_mainFragment)
 
             val intent = Intent(context,MainActivity::class.java)
+           val viewScreenShot  =loadBitmapFromView(layout_camera)
+           val viewSsCroped= cropImage(viewScreenShot!!,layout_camera,layout_camera_small)
+
 
             intent.putExtra("imageCapture",cropedImage)
+           // intent.putExtra("imageCapture",viewSsCroped)
             startActivity(intent)
 
         }
@@ -90,13 +97,13 @@ class Camera:AppCompatActivity() {
         /*outputDirectory = getOutputDirectory()
         cameraExecutor = Executors.newSingleThreadExecutor()*/
     }
+    @SuppressLint("RestrictedApi")
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener(Runnable {
             // Used to bind the lifecycle of cameras to the lifecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
             // Preview
            // val aspectRatio = Rational(layout_camera.width,layout_camera.height)
             val displayMetrics = DisplayMetrics()
@@ -104,28 +111,29 @@ class Camera:AppCompatActivity() {
             val screenAspectRatio = Rational(displayMetrics.widthPixels, displayMetrics.heightPixels)
             val screenSize = Size(displayMetrics.widthPixels,displayMetrics.heightPixels)
             preview = Preview.Builder()
-                .setTargetRotation(layout_camera.display.rotation)
-               // .setTargetAspectRatio(screenAspectRatio.toInt())
                // .setTargetResolution(screenSize)
+                //.setTargetRotation(layout_camera.display.rotation)
+                //.setTargetAspectRatio(screenAspectRatio.toInt())
+              //  .setTargetAspectRatio(screenAspectRatio.toInt())
+                //.setTargetRotation(Surface.ROTATION_90)
                 .build()
                 //Image Capture
             imageCapture = ImageCapture.Builder()
+               // .setTargetResolution(screenSize)
+                //.setTargetRotation(layout_camera.display.rotation)
+                //.setTargetAspectRatio(screenAspectRatio.toInt())
                 .build()
             // Select back camera
             val cameraSelector = CameraSelector.Builder()
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build()
-
-
             try {
                 // Unbind use cases before rebinding
                 cameraProvider.unbindAll()
 
                 // Bind use cases to camera
                 camera = cameraProvider.bindToLifecycle(this,cameraSelector,preview,imageCapture)
-
-
-                preview?.setSurfaceProvider(layout_camera.createSurfaceProvider(camera?.cameraInfo))
+                preview?.setSurfaceProvider(layout_camera.createSurfaceProvider())
 
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -139,8 +147,6 @@ class Camera:AppCompatActivity() {
 
         // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
-
-
 /*        // Create timestamped output file to hold the image
         val photoFile = File(
             outputDirectory,
@@ -172,7 +178,8 @@ class Camera:AppCompatActivity() {
                 }
             })*/
 
-        imageCapture.takePicture(ContextCompat.getMainExecutor(this), object: ImageCapture.OnImageCapturedCallback() {
+        imageCapture.takePicture(ContextCompat.getMainExecutor(this), object: ImageCapture
+        .OnImageCapturedCallback() {
             @SuppressLint("UnsafeExperimentalUsageError")
             override fun onCaptureSuccess(image: ImageProxy) {
                /* val rect =Rect()
@@ -181,8 +188,13 @@ class Camera:AppCompatActivity() {
                 image.setCropRect(rect)*/
                 d("widthImage",image.width.toString())
 
+                var imageBitmap : Bitmap =image.image!!.toBitmap()
+                val imageImage = image.image
+                val left = (layout_camera.width/2) - 150
+                val top = (layout_camera.height/2) - 150
 
-                 cropedImage = cropImage(image.image!!.toBitmap(),layout_camera,layout_camera_small)
+                 cropedImage = cropImage(imageBitmap,layout_camera,layout_camera_small)
+                   // cropedImage = imageImage!!.cropRect.set(Rect(left,top,left,top)) as ByteArray
 
 
      /*          val bundle = Bundle()
@@ -194,6 +206,7 @@ class Camera:AppCompatActivity() {
             }
 
             override fun onError(exc: ImageCaptureException) {
+                cropedImage=null!!
                 Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
             }
         })
@@ -238,7 +251,15 @@ class Camera:AppCompatActivity() {
         }
 
     }
-    private fun cropImage(bitmap: Bitmap, frame: View, reference: View): ByteArray {
+    fun loadBitmapFromView(v: View): Bitmap? {
+        v.isDrawingCacheEnabled = true
+        v.buildDrawingCache(true)
+        val b = Bitmap.createBitmap(v.drawingCache)
+        v.isDrawingCacheEnabled = false
+        return b
+    }
+     fun cropImage(bitmap: Bitmap, frame: View, reference: View): ByteArray {
+
         val heightOriginal = frame.height
         d("frame.height",heightOriginal.toString())
         val widthOriginal = frame.width
@@ -257,22 +278,24 @@ class Camera:AppCompatActivity() {
         d("heightimage",heightReal.toString())
         d("widthimage",widthReal.toString())
         val widthFinal = widthFrame * widthReal / widthOriginal
-        val heightFinal = heightFrame * heightReal / heightOriginal
-        val leftFinal = (leftFrame * widthReal / widthOriginal)
-        val topFinal = (topFrame * heightReal / heightOriginal) - 75
+       val heightFinal = heightFrame * heightReal / heightOriginal
+        val leftFinal =( widthReal / 2) - 150
+        val topFinal = (heightReal / 2) - 150
         d("leftFrame",leftFrame.toString())
         d("leftFinal",leftFinal.toString())
         d("topFrame",topFrame.toString())
         d("topFinal",topFinal.toString())
         d("widthtest",(widthOriginal/2-150).toString())
 
+
         val bitmapFinal = Bitmap.createBitmap(
             bitmap,
             leftFinal  , topFinal, 300, 300
         )
+
         val stream = ByteArrayOutputStream()
         bitmapFinal.compress(
-            Bitmap.CompressFormat.JPEG,
+            Bitmap.CompressFormat.PNG,
             100,
             stream
         ) //100 is the best quality possibe
