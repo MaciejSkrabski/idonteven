@@ -5,6 +5,7 @@
     android:background="@color/background"
 
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <androidx.appcompat.widget.AppCompatImageView
 
         android:id="@+id/layout_display_image_camera"
