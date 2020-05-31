@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import com.example.gettext.MainActivity
 import com.example.gettext.R
+import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.main_fragment.*
 
 
@@ -36,14 +37,16 @@ class MainFragment : Fragment() {
 
     override fun onResume() {
         val activity: MainActivity? = activity as MainActivity?
-        val image =activity!!.returnCapturedImage()
+        val image =activity!!.returnPhotoPath()
         if (image!=null) {
-            val imageRotated = image.rotate(90F)
+            Picasso.get().load(image)
+               // .resize(layout_display_image_camera.width,layout_display_image_camera.height)
+                .into(layout_display_image_camera)
 
 
-            layout_display_image_camera.setImageBitmap(imageRotated)
-
-
+        }
+        else{
+            Toast.makeText(this.context,"There is no image!",Toast.LENGTH_LONG).show()
         }
         super.onResume()
     }
@@ -52,10 +55,7 @@ class MainFragment : Fragment() {
         viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
 
     }
-    fun Bitmap.rotate(degrees: Float): Bitmap {
-        val matrix = Matrix().apply { postRotate(degrees) }
-        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
-    }
+
 
 
 

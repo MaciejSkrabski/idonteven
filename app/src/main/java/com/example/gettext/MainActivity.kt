@@ -25,16 +25,14 @@ import kotlinx.android.synthetic.main.main_fragment.*
 class MainActivity : AppCompatActivity() {
 
     var navController: NavController?=null
-    private var btm: Bitmap?=null
+    private var photoPath: String ?= null
     override fun onCreate(savedInstanceState: Bundle?) {
 
         val extras = intent.extras
         if(extras!=null) {
-            val bytearray = extras!!.getByteArray("imageCapture")
-             btm = BitmapFactory.decodeByteArray(bytearray, 0, bytearray!!.size)
-           // Toast.makeText(this,btm.toString(),Toast.LENGTH_LONG).show()
+             photoPath = extras!!.getString("imagePath")
 
-            //
+
         }
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
@@ -100,8 +98,8 @@ class MainActivity : AppCompatActivity() {
 
         }
     }
-    fun returnCapturedImage(): Bitmap?{
-            return btm
+    fun returnPhotoPath(): String?{
+            return photoPath
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
