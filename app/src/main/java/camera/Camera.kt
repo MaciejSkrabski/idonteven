@@ -2,15 +2,20 @@ package camera
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.display.DisplayManager
+import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
 import android.view.Surface
 import android.view.animation.AnimationUtils
+import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -24,7 +29,12 @@ import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.android.synthetic.main.camera.*
 import java.io.File
 import androidx.camera.core.AspectRatio
+import androidx.camera.view.PreviewView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.net.toFile
 import com.example.gettext.MainActivity
+import kotlinx.android.synthetic.main.main_activity.*
 
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,22 +45,29 @@ import kotlin.math.max
 import kotlin.math.min
 
 class Camera: AppCompatActivity() {
+    private lateinit var container: ConstraintLayout
     private lateinit var cameraProviderFuture : ListenableFuture<ProcessCameraProvider>
     private var preview: Preview? = null
     private var camera: Camera? = null
     private var imageCapture: ImageCapture? = null
     private lateinit var outputDirectory: File
     private var photoFile : File? = null
+    private var displayId: Int = -1
+
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.camera)
         if (allPermissionsGranted()) {
-            startCamera()
+            layout_camera.post{
+                startCamera()
+            }
+
         } else {
             ActivityCompat.requestPermissions(
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
+
         cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         outputDirectory = getOutputDirectory()
         val fabOpenAnim = AnimationUtils.loadAnimation(this, R.anim.fab_open)
@@ -130,16 +147,17 @@ class Camera: AppCompatActivity() {
 
             val screenAspectRatio = aspectRatio(metrics.widthPixels, metrics.heightPixels)
             Log.d(TAG, "Preview aspect ratio: $screenAspectRatio")
-            TODO("Crop image before ... croping image ")
             val rotation = layout_camera.display.rotation
 
             // Preview
             preview = Preview.Builder()
-                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+                .setTargetAspectRatio(screenAspectRatio)
+                .setTargetRotation(rotation)
                 .build()
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+                .setTargetAspectRatio(screenAspectRatio)
+                .setTargetRotation(rotation)
                 .build()
 
             // Select back camera
@@ -190,11 +208,36 @@ class Camera: AppCompatActivity() {
 
                         val savedUri = Uri.fromFile(photoFile)
                         val msg = "Photo capture succeeded: $savedUri"
-                        //Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                         Log.d(TAG, msg)
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                            this@Camera.sendBroadcast(
+                                Intent(android.hardware.Camera.ACTION_NEW_PICTURE, savedUri)
+                            )
+                        }
+                        val mimeType = MimeTypeMap.getSingleton()
+                            .getMimeTypeFromExtension(savedUri.toFile().extension)
+                        MediaScannerConnection.scanFile(
+                            this@Camera,
+                            arrayOf(savedUri.toFile().absolutePath),
+                            arrayOf(mimeType)
+                        ) { _, uri ->
+                            Log.d(TAG, "Image capture scanned into media store: $uri")
+                        }
+
                     }
                 })
 
+    }
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) = Unit
+        override fun onDisplayRemoved(displayId: Int) = Unit
+        override fun onDisplayChanged(displayId: Int) = layout_camera?.let { view ->
+            if (displayId == this@Camera.displayId) {
+                Log.d(TAG, "Rotation changed: ${layout_camera.display.rotation}")
+                imageCapture?.targetRotation = layout_camera.display.rotation
+
+            }
+        } ?: Unit
     }
     private fun aspectRatio(width: Int, height: Int): Int {
         val previewRatio = max(width, height).toDouble() / min(width, height)

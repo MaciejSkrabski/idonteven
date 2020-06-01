@@ -21,6 +21,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
+        app:scaleType="fillCenter"
 
         >
 
@@ -30,8 +31,8 @@
         android:background="@drawable/strokes"
         android:id="@+id/layout_camera_small"
 
-        android:layout_width="300px"
-        android:layout_height="300px"
+        android:layout_width="301px"
+        android:layout_height="301px"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
