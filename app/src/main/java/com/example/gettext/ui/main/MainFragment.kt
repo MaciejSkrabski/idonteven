@@ -1,6 +1,7 @@
 package com.example.gettext.ui.main
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,6 +14,7 @@ import com.example.gettext.MainActivity
 import com.example.gettext.R
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.main_fragment.*
+import java.io.File
 
 
 class MainFragment : Fragment() {
@@ -39,9 +41,17 @@ class MainFragment : Fragment() {
         val activity: MainActivity? = activity as MainActivity?
         val image =activity!!.returnPhotoPath()
         if (image!=null) {
-            Picasso.get().load(image)
+
+            val bitmap = BitmapFactory.decodeFile(image)
+            val rotatedBitmap = bitmap.rotate(90F)
+
+
+           /* Picasso.get().load(image)
                // .resize(layout_display_image_camera.width,layout_display_image_camera.height)
-                .into(layout_display_image_camera)
+                .into(layout_display_image_camera)*/
+           val cropedImage = cropImage(rotatedBitmap)
+            layout_display_image_camera.setImageBitmap(cropedImage)
+            Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
 
 
         }
@@ -54,6 +64,24 @@ class MainFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
 
+    }
+    fun Bitmap.rotate(degrees: Float): Bitmap {
+        val matrix = Matrix().apply { postRotate(degrees) }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+    }
+    private fun cropImage(bitmap: Bitmap): Bitmap {
+
+        val heightReal = bitmap.height
+        val widthReal = bitmap.width
+        val widthFinal = widthReal/2 - 150
+        val heightFinal = heightReal/2 -150
+
+        val bitmapFinal = Bitmap.createBitmap(
+            bitmap,
+            widthFinal, heightFinal, 300, 300
+        )
+
+        return bitmapFinal
     }
 
 

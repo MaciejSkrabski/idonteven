@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
+import android.view.Surface
 import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -129,18 +130,16 @@ class Camera: AppCompatActivity() {
 
             val screenAspectRatio = aspectRatio(metrics.widthPixels, metrics.heightPixels)
             Log.d(TAG, "Preview aspect ratio: $screenAspectRatio")
-
+            TODO("Crop image before ... croping image ")
             val rotation = layout_camera.display.rotation
 
             // Preview
             preview = Preview.Builder()
-                .setTargetAspectRatio(screenAspectRatio)
-                .setTargetRotation(rotation)
+                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                 .build()
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .setTargetAspectRatio(screenAspectRatio)
-                .setTargetRotation(rotation)
+                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                 .build()
 
             // Select back camera
