@@ -87,6 +87,7 @@ class Camera: AppCompatActivity() {
             val intent= Intent(this, MainActivity::class.java)
             intent.putExtra("imagePath",path)
             startActivity(intent)
+            overridePendingTransition(0,R.anim.slide_out_top)
 
         }
         btn_decline.setOnClickListener{
@@ -245,5 +246,11 @@ class Camera: AppCompatActivity() {
             return AspectRatio.RATIO_4_3
         }
         return AspectRatio.RATIO_16_9
+    }
+
+    override fun onStop() {
+        overridePendingTransition(R.anim.slide_in_top,R.anim.slide_out_top)
+        super.onStop()
+
     }
 }

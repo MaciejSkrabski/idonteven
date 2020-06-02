@@ -18,6 +18,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"></androidx.appcompat.widget.AppCompatImageView>
     <TextView
+        android:id="@+id/ovelap"
+        android:visibility="invisible"
         android:textColor="@android:color/white"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -31,7 +33,7 @@
         android:textSize="24dp"
         android:layout_marginLeft="16dp"/>
     <androidx.constraintlayout.widget.ConstraintLayout
-
+        android:visibility="invisible"
         android:elevation="10dp"
         android:id="@+id/layout_text"
         android:background="@drawable/backround_round_top_corners"

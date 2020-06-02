@@ -1,16 +1,20 @@
 package com.example.gettext.ui.main
 
 import android.R.attr.name
+import android.R.attr.visibility
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.os.Bundle
+import android.service.media.MediaBrowserService
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import camera.Camera
@@ -35,22 +39,16 @@ class MainFragment : Fragment() {
     }
 
     private lateinit var viewModel: MainViewModel
-    private lateinit var containerLayout: ConstraintLayout
 
 
+lateinit var root: View
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View {
 
 
 
 
-          val root =inflater.inflate(R.layout.main_fragment, container, false)
-        containerLayout = root.findViewById(R.id.container_main_fragment)
-        if(containerLayout==null){
-            Log.d("Container:","null")
-        }else{
-            Log.d("Container:","NotNull")
-        }
+           root =inflater.inflate(R.layout.main_fragment, container, false)
         return root
 
     }
@@ -82,7 +80,10 @@ class MainFragment : Fragment() {
         if (image!=null) {
             val file= File(image)
             if (file.exists()) {
-
+                var overlap:TextView = root.findViewById(R.id.ovelap)
+                val layout_text : ConstraintLayout= root.findViewById(R.id.layout_text)
+                overlap.isVisible = true
+                layout_text.isVisible= true
                 var fOut= FileOutputStream(imageFile)
                 Log.d("ImageFileDir",imageFile.absolutePath)
 
