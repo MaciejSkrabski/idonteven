@@ -54,7 +54,7 @@
             android:text="Text you got:"/>-->
 
         <TextView
-
+            android:id="@+id/main_text"
             android:textColor="@color/mainText"
             android:elevation="10dp"
             android:layout_margin="10dp"
@@ -64,8 +64,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-            android:textAlignment="center"/>
+             android:textAlignment="center"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

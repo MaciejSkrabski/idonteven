@@ -82,9 +82,14 @@ lateinit var root: View
             if (file.exists()) {
                 var overlap:TextView = root.findViewById(R.id.ovelap)
                 val layout_text : ConstraintLayout= root.findViewById(R.id.layout_text)
+                var main_text: TextView = root.findViewById(R.id.main_text)
+                main_text.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+
                 overlap.isVisible = true
                 layout_text.isVisible= true
                 var fOut= FileOutputStream(imageFile)
+                //imageFile is a file of the final 300x300 image, to get path- imageFile.absolutePath like below
+
                 Log.d("ImageFileDir",imageFile.absolutePath)
 
                 val bitmap = BitmapFactory.decodeFile(image)

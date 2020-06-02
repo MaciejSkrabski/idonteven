@@ -6,11 +6,13 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.animation.AnimationUtils
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.get
 import androidx.core.view.isVisible
@@ -19,6 +21,7 @@ import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
 import com.example.gettext.ui.main.MainFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.android.synthetic.main.info_layout.*
 import kotlinx.android.synthetic.main.main_activity.*
 import kotlinx.android.synthetic.main.main_fragment.*
 
@@ -128,7 +131,13 @@ class MainActivity : AppCompatActivity() {
                 preferences.setMode(true)
             }
 
-            R.id.info -> TODO()
+            R.id.info -> {
+                val dialogView = LayoutInflater.from(this).inflate(R.layout.info_layout,null)
+                val mBuilder = AlertDialog.Builder(this)
+                    .setView(dialogView)
+                val mAlertDialog = mBuilder.show()
+
+            }
         }
     return true
     }
