@@ -151,13 +151,13 @@ class Camera: AppCompatActivity() {
 
             // Preview
             preview = Preview.Builder()
-                .setTargetAspectRatio(screenAspectRatio)
-                .setTargetRotation(rotation)
+                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                //.setTargetRotation(rotation)
                 .build()
             imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .setTargetAspectRatio(screenAspectRatio)
-                .setTargetRotation(rotation)
+                //.setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+
                 .build()
 
             // Select back camera

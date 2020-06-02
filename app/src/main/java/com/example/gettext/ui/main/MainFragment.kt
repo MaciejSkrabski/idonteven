@@ -29,6 +29,7 @@ import java.io.File
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 
 class MainFragment : Fragment() {
@@ -67,6 +68,13 @@ class MainFragment : Fragment() {
        // Log.d("WidthOnResume",width.toString())
         val width =getActivity()!!.windowManager.defaultDisplay.width
         val height = getActivity()!!.windowManager.defaultDisplay.height
+        //Greatest common divisor
+        val gcd = gcd(height,width)
+        //Aspect ratio
+        val arH = height/gcd
+        val arW = width/gcd
+
+        Log.d("AspectRatioScreen","${arH}:${arW}")
         Log.d("Displayresolution : ","${height}x${width}")
         val image =activity!!.returnPhotoPath()
         if (image!=null) {
@@ -74,33 +82,16 @@ class MainFragment : Fragment() {
             val bitmap = BitmapFactory.decodeFile(image)
 
             val rotatedBitmap = bitmap.rotate(90F)
+            val hpr =hpr(arH,arW,rotatedBitmap.height,rotatedBitmap.width)
+
             Log.d("BitmapImageResolution: ","${rotatedBitmap.height}x${rotatedBitmap.width}")
             val aspecRatio = aspectRatio(height,width)
             Log.d("aspectRatioFragment",aspecRatio)
 
-
-            var x = 1
-            var y = 1
-            var dontbreak = true
-            do{
-                if(y*(height.toDouble()/width.toDouble()) <= rotatedBitmap.height){
-                ++y
-                }else if (x*((width.toDouble()/height.toDouble()))<= rotatedBitmap.width){
-                    ++x
-
-                }else{
-                    dontbreak=false
-
-                }
-            }while (dontbreak)
-            Log.d("Xvalue",x.toString())
-            Log.d("Yvalue",y.toString())
-            val newHeight = ((height.toDouble()/width.toDouble()) * (y)).toInt()
-            val newWidth = ((width.toDouble()/height.toDouble()) * (x)).toInt()
+            val newHeight = arH * (hpr-1)
+            val newWidth = arW * (hpr-1)
             Log.d("NewImageResolution: ","${newHeight}x${newWidth}")
             val cropedImage = cropImage(rotatedBitmap,newWidth,newHeight)
-
-
 
             val resizedbitmap =Bitmap.createScaledBitmap(cropedImage,width,height,false)
            val cropedImage2 = cropImage(resizedbitmap,300,300)
@@ -121,10 +112,30 @@ class MainFragment : Fragment() {
         viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
 
     }
+    fun gcd(height: Int, width: Int): Int {
+        var i = 1
+        var gcd = 1
+        while (i <= height && i <= width) {
+            if(height % i == 0 && width % i == 0 ){
+                gcd = i
+            }
+            ++i
+        }
+        return gcd
+    }
+    // Function return highes possible mutlipler in certian resolution
+    fun hpr(arH:Int,arW:Int,height: Int,width: Int): Int{
+        var i=1
+        while(i * arH <= height && i * arW <= width){
+            ++i
+        }
+        return i
+    }
     fun Bitmap.rotate(degrees: Float): Bitmap {
         val matrix = Matrix().apply { postRotate(degrees) }
         return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
+        }
     private fun cropImage(bitmap: Bitmap,widths: Int,heights: Int): Bitmap {
 
 
@@ -152,4 +163,4 @@ class MainFragment : Fragment() {
 
 
 
-}
+
