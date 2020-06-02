@@ -1,11 +1,14 @@
 package com.example.gettext
 
 import android.app.Activity
-import android.content.*
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.database.Cursor
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -13,19 +16,21 @@ import android.view.animation.AnimationUtils
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.view.get
 import androidx.core.view.isVisible
 import androidx.navigation.NavController
-import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
-import com.example.gettext.ui.main.MainFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.android.synthetic.main.info_layout.*
 import kotlinx.android.synthetic.main.main_activity.*
-import kotlinx.android.synthetic.main.main_fragment.*
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        //image pick code
+        private val IMAGE_PICK_CODE = 1000;
+        //Permission code
+        private val PERMISSION_CODE = 1001;
+    }
 
     var navController: NavController?=null
     private var photoPath: String ?= null
@@ -99,10 +104,48 @@ class MainActivity : AppCompatActivity() {
             fabInfoGallery.isVisible= false
             isOpen=false
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                    PackageManager.PERMISSION_DENIED){
+                    //permission denied
+                    val permissions = arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE);
+                    //show popup to request runtime permission
+                    requestPermissions(permissions, PERMISSION_CODE);
+                }
+                else{
+                    //permission already granted
+                    pickImageFromGallery();
+                }
+            }
+            else{
+                //system OS is < Marshmallow
+                pickImageFromGallery();
+            }
         }
+
+
     }
+
+    private fun pickImageFromGallery() {
+        //Intent to pick image
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        startActivityForResult(intent, IMAGE_PICK_CODE)
+    }
+
     fun returnPhotoPath(): String?{
             return photoPath
+    }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK && requestCode == IMAGE_PICK_CODE){
+            val path = convertMediaUriToPath(data?.data)
+            Log.d("DataFromGallery",path)
+
+
+            photoPath = path!!
+
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -140,5 +183,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
     return true
+    }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when(requestCode){
+            PERMISSION_CODE -> {
+                if (grantResults.size >0 && grantResults[0] ==
+                    PackageManager.PERMISSION_GRANTED){
+                    //permission from popup granted
+                    pickImageFromGallery()
+                }
+                else{
+                    //permission from popup denied
+                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+    }
+    fun convertMediaUriToPath(uri: Uri?): String? {
+        val proj = arrayOf<String>(MediaStore.Images.Media.DATA)
+        val cursor: Cursor? = contentResolver.query(uri!!, proj, null, null, null)
+        val column_index: Int = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+        cursor.moveToFirst()
+        val path: String = cursor.getString(column_index)
+        cursor.close()
+        return path
     }
 }

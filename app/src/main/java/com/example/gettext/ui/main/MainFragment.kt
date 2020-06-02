@@ -93,9 +93,10 @@ lateinit var root: View
                 Log.d("ImageFileDir",imageFile.absolutePath)
 
                 val bitmap = BitmapFactory.decodeFile(image)
-                if(bitmap!=null){
+                if(bitmap.width!=300 && bitmap.height!=300){
+                /*if(bitmap!=null){
                 file.delete()
-                    }
+                    }*/
 
                 val rotatedBitmap = bitmap.rotate(90F)
                 val hpr = hpr(arH, arW, rotatedBitmap.height, rotatedBitmap.width)
@@ -120,8 +121,12 @@ lateinit var root: View
                 //   Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
 
 
-            }
+            }else{
+                    layout_display_image_camera.setImageBitmap(bitmap)
 
+                }
+
+        }
         }
         else{
 
