@@ -1,35 +1,30 @@
 package com.example.gettext.ui.main
 
-import android.app.Activity
+import android.R.attr.name
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.hardware.display.DisplayManager
 import android.os.Bundle
-import android.text.BoringLayout
-import android.util.DisplayMetrics
 import android.util.Log
-import android.view.Display
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
-import androidx.camera.core.AspectRatio
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import camera.Camera
 import com.example.gettext.MainActivity
 import com.example.gettext.R
-import com.squareup.picasso.Picasso
-import kotlinx.android.synthetic.main.camera.*
 import kotlinx.android.synthetic.main.main_fragment.*
-import kotlinx.android.synthetic.main.main_fragment.view.*
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 
 class MainFragment : Fragment() {
@@ -60,6 +55,7 @@ class MainFragment : Fragment() {
 
     }
 
+    @SuppressLint("WrongThread")
     override fun onResume() {
         val activity: MainActivity? = activity as MainActivity?
        // val metrics = DisplayMetrics().also { containerLayout.display.getRealMetrics(it) }
@@ -77,33 +73,52 @@ class MainFragment : Fragment() {
         Log.d("AspectRatioScreen","${arH}:${arW}")
         Log.d("Displayresolution : ","${height}x${width}")
         val image =activity!!.returnPhotoPath()
+        val filesDir: File = this.context!!.externalMediaDirs.firstOrNull().let {
+            File(it, resources.getString(R.string.app_name)).apply { mkdirs() } }
+        val imageFile = File(filesDir, SimpleDateFormat(
+            "yyyy-MM-dd-HH-mm-ss-SSS", Locale.ROOT
+        ).format(System.currentTimeMillis()) + ".jpg")
+
         if (image!=null) {
             val file= File(image)
-            val bitmap = BitmapFactory.decodeFile(image)
+            if (file.exists()) {
 
-            val rotatedBitmap = bitmap.rotate(90F)
-            val hpr =hpr(arH,arW,rotatedBitmap.height,rotatedBitmap.width)
+                var fOut= FileOutputStream(imageFile)
+                Log.d("ImageFileDir",imageFile.absolutePath)
 
-            Log.d("BitmapImageResolution: ","${rotatedBitmap.height}x${rotatedBitmap.width}")
-            val aspecRatio = aspectRatio(height,width)
-            Log.d("aspectRatioFragment",aspecRatio)
+                val bitmap = BitmapFactory.decodeFile(image)
+                if(bitmap!=null){
+                file.delete()
+                    }
 
-            val newHeight = arH * (hpr-1)
-            val newWidth = arW * (hpr-1)
-            Log.d("NewImageResolution: ","${newHeight}x${newWidth}")
-            val cropedImage = cropImage(rotatedBitmap,newWidth,newHeight)
+                val rotatedBitmap = bitmap.rotate(90F)
+                val hpr = hpr(arH, arW, rotatedBitmap.height, rotatedBitmap.width)
 
-            val resizedbitmap =Bitmap.createScaledBitmap(cropedImage,width,height,false)
-           val cropedImage2 = cropImage(resizedbitmap,300,300)
-            layout_display_image_camera.setImageBitmap(cropedImage2)
-            Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
+                Log.d("BitmapImageResolution: ", "${rotatedBitmap.height}x${rotatedBitmap.width}")
+                val aspecRatio = aspectRatio(height, width)
+                Log.d("aspectRatioFragment", aspecRatio)
+
+                val newHeight = arH * (hpr - 1)
+                val newWidth = arW * (hpr - 1)
+                Log.d("NewImageResolution: ", "${newHeight}x${newWidth}")
+                val cropedImage = cropImage(rotatedBitmap, newWidth, newHeight)
+
+                val resizedbitmap = Bitmap.createScaledBitmap(cropedImage, width, height, false)
+                val cropedImageFinal = cropImage(resizedbitmap, 300, 300)
+                cropedImageFinal.compress(Bitmap.CompressFormat.JPEG,100,fOut)
+                Log.d("CropedImageFinal","${cropedImageFinal.height}x${cropedImageFinal.width}")
+                fOut.flush()
+                fOut.close()
+
+                layout_display_image_camera.setImageBitmap(cropedImageFinal)
+                //   Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
 
 
-
+            }
 
         }
         else{
-            Toast.makeText(this.context,"There is no image!",Toast.LENGTH_LONG).show()
+
         }
         super.onResume()
     }
@@ -159,6 +174,7 @@ class MainFragment : Fragment() {
         }
         return "16:9"
     }
+
 
 
 
