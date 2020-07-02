@@ -1,6 +1,8 @@
 package com.example.gettext
 
+//ADDED
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
@@ -23,8 +25,13 @@ import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.main_activity.*
+import org.pytorch.Module
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
 
 class MainActivity : AppCompatActivity() {
+    lateinit var model: Module
     companion object {
         //image pick code
         private val IMAGE_PICK_CODE = 1000;
@@ -44,6 +51,13 @@ class MainActivity : AppCompatActivity() {
         }
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
+
+        //ADDED
+        model = Module.load(assetFilePath(application, "mobilejit.pt"))
+        Log.d("PYTORCH", "onCreate: $model")
+
+
+
         setSupportActionBar(toolbar)
         getSupportActionBar()?.setDisplayShowTitleEnabled(false)
         navController= Navigation.findNavController(findViewById(R.id.nav_host_fragment))
@@ -208,5 +222,33 @@ class MainActivity : AppCompatActivity() {
         val path: String = cursor.getString(column_index)
         cursor.close()
         return path
+    }
+
+    fun assetFilePath(context: Context, asset: String): String {
+        val file = File(context.filesDir, asset)
+
+        try {
+            val inpStream: InputStream = context.assets.open(asset)
+            try {
+                val outStream = FileOutputStream(file, false)
+                val buffer = ByteArray(4 * 1024)
+                var read: Int
+
+                while (true) {
+                    read = inpStream.read(buffer)
+                    if (read == -1) {
+                        break
+                    }
+                    outStream.write(buffer, 0, read)
+                }
+                outStream.flush()
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+            return file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return ""
     }
 }

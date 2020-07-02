@@ -13,6 +13,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -92,6 +93,8 @@ lateinit var root: View
 
                 Log.d("ImageFileDir",imageFile.absolutePath)
 
+
+
                 val bitmap = BitmapFactory.decodeFile(image)
                 if(bitmap.width!=300 && bitmap.height!=300){
                 /*if(bitmap!=null){
@@ -112,26 +115,46 @@ lateinit var root: View
 
                 val resizedbitmap = Bitmap.createScaledBitmap(cropedImage, width, height, false)
                 val cropedImageFinal = cropImage(resizedbitmap, 300, 300)
+
+                    Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
+                    /* TODO:
+                    * RIGHT HERE!!!!
+                    *
+                    */
+                    activity.model
+
+                    Toast.makeText(context, "IMAAAGE! $image.", Toast.LENGTH_LONG).show()
+
                 cropedImageFinal.compress(Bitmap.CompressFormat.JPEG,100,fOut)
                 Log.d("CropedImageFinal","${cropedImageFinal.height}x${cropedImageFinal.width}")
                 fOut.flush()
                 fOut.close()
 
                 layout_display_image_camera.setImageBitmap(cropedImageFinal)
-                //   Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
 
+
+                    super.onResume()
 
             }else{
                     layout_display_image_camera.setImageBitmap(bitmap)
 
+                    Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
+                    /* TODO:
+                    * AND HERE!!!!
+                    *
+                    */
+                    Toast.makeText(context, "IMAAAGE! $image", Toast.LENGTH_LONG).show()
+
                 }
+
+
 
         }
         }
         else{
 
         }
-        super.onResume()
+
     }
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
