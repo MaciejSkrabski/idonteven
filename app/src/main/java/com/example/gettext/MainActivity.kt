@@ -25,6 +25,8 @@ import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.main_activity.*
+import org.pytorch.*
+import org.pytorch.torchvision.*
 import org.pytorch.Module
 import java.io.File
 import java.io.FileOutputStream

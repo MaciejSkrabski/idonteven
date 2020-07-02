@@ -3,9 +3,7 @@ package com.example.gettext.ui.main
 import android.R.attr.name
 import android.R.attr.visibility
 import android.annotation.SuppressLint
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
+import android.graphics.*
 import android.os.Bundle
 import android.service.media.MediaBrowserService
 import android.util.Log
@@ -22,6 +20,9 @@ import camera.Camera
 import com.example.gettext.MainActivity
 import com.example.gettext.R
 import kotlinx.android.synthetic.main.main_fragment.*
+import org.pytorch.IValue
+import org.pytorch.Tensor
+import org.pytorch.torchvision.*
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -116,14 +117,6 @@ lateinit var root: View
                 val resizedbitmap = Bitmap.createScaledBitmap(cropedImage, width, height, false)
                 val cropedImageFinal = cropImage(resizedbitmap, 300, 300)
 
-                    Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
-                    /* TODO:
-                    * RIGHT HERE!!!!
-                    *
-                    */
-                    activity.model
-
-                    Toast.makeText(context, "IMAAAGE! $image.", Toast.LENGTH_LONG).show()
 
                 cropedImageFinal.compress(Bitmap.CompressFormat.JPEG,100,fOut)
                 Log.d("CropedImageFinal","${cropedImageFinal.height}x${cropedImageFinal.width}")
@@ -133,28 +126,31 @@ lateinit var root: View
                 layout_display_image_camera.setImageBitmap(cropedImageFinal)
 
 
-                    super.onResume()
+                    /*TODO:
+                    * RIGHT HERE
+                    *
+                     */
+                Toast.makeText(this.context,image+"PHOTO",Toast.LENGTH_LONG).show()
+                // Toast.makeText(this.context, "${activity.model}", Toast.LENGTH_SHORT).show() // works
+
 
             }else{
                     layout_display_image_camera.setImageBitmap(bitmap)
-
-                    Toast.makeText(this.context,image,Toast.LENGTH_LONG).show()
-                    /* TODO:
-                    * AND HERE!!!!
-                    *
-                    */
-                    Toast.makeText(context, "IMAAAGE! $image", Toast.LENGTH_LONG).show()
+                    /*TODO:
+                * RIGHT HERE
+                *
+                 */
+                    Toast.makeText(this.context,image+"GALLERY",Toast.LENGTH_LONG).show()
+                    Toast.makeText(this.context, "${activity.model}", Toast.LENGTH_SHORT).show()
 
                 }
-
-
 
         }
         }
         else{
 
         }
-
+        super.onResume()
     }
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -211,6 +207,23 @@ lateinit var root: View
 
 
 
+fun toGrayscale(bmpOriginal: Bitmap): Bitmap {
+    val width = 300
+    val height = 300
 
+    val bmpGrayscale = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val c = Canvas(bmpGrayscale)
+    val paint = Paint()
+    val cm = ColorMatrix()
+    cm.setSaturation(0f)
+    val f = ColorMatrixColorFilter(cm)
+    paint.colorFilter = f
+    c.drawBitmap(bmpOriginal, 0f, 0f, paint)
+    return bmpGrayscale
+}
 
+fun normalize(grayscale: Bitmap): Bitmap {
+    val tiu = TensorImageUtils()
+
+}
 
