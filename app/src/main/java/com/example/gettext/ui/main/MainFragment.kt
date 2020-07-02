@@ -1,31 +1,29 @@
 package com.example.gettext.ui.main
 
-import android.R.attr.name
-import android.R.attr.visibility
 import android.annotation.SuppressLint
 import android.graphics.*
 import android.os.Bundle
-import android.service.media.MediaBrowserService
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.ConsoleMessage
 import android.widget.TextView
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
-import camera.Camera
 import com.example.gettext.MainActivity
 import com.example.gettext.R
 import kotlinx.android.synthetic.main.main_fragment.*
 import org.pytorch.IValue
+import org.pytorch.Module
 import org.pytorch.Tensor
-import org.pytorch.torchvision.*
+import org.pytorch.torchvision.TensorImageUtils
 import java.io.File
 import java.io.FileOutputStream
-import java.io.OutputStream
+import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.abs
@@ -122,17 +120,23 @@ lateinit var root: View
                 Log.d("CropedImageFinal","${cropedImageFinal.height}x${cropedImageFinal.width}")
                 fOut.flush()
                 fOut.close()
-
-                layout_display_image_camera.setImageBitmap(cropedImageFinal)
+                var grayscaled = toGrayscale(cropedImageFinal)
+                layout_display_image_camera.setImageBitmap(grayscaled)
 
 
                     /*TODO:
                     * RIGHT HERE
                     *
                      */
-                Toast.makeText(this.context,image+"PHOTO",Toast.LENGTH_LONG).show()
-                // Toast.makeText(this.context, "${activity.model}", Toast.LENGTH_SHORT).show() // works
 
+                // Toast.makeText(this.context, "${activity.model}", Toast.LENGTH_SHORT).show() // works
+                normalize(grayscaled) // works
+
+                var normalized = normalize(grayscaled)
+                    Log.d("PREPARATION", "normalized: $normalized")
+                var prediction = predict(activity.model)
+                    Log.d("PREDICTOIN", "prediction: $prediction")
+                Toast.makeText(this.context,prediction,Toast.LENGTH_LONG).show()
 
             }else{
                     layout_display_image_camera.setImageBitmap(bitmap)
@@ -140,8 +144,10 @@ lateinit var root: View
                 * RIGHT HERE
                 *
                  */
-                    Toast.makeText(this.context,image+"GALLERY",Toast.LENGTH_LONG).show()
-                    Toast.makeText(this.context, "${activity.model}", Toast.LENGTH_SHORT).show()
+                    /*
+                    var prediction = predict(activity.model, normalize(toGrayscale(bitmap)))
+                    Toast.makeText(this.context,prediction,Toast.LENGTH_LONG).show()
+                    */
 
                 }
 
@@ -219,11 +225,52 @@ fun toGrayscale(bmpOriginal: Bitmap): Bitmap {
     val f = ColorMatrixColorFilter(cm)
     paint.colorFilter = f
     c.drawBitmap(bmpOriginal, 0f, 0f, paint)
+    Log.d("PREPARATION", "grayscaled: $bmpGrayscale")
     return bmpGrayscale
 }
 
-fun normalize(grayscale: Bitmap): Bitmap {
-    val tiu = TensorImageUtils()
+fun normalize(grayscale: Bitmap) {
+    val ba = convertToByteArray(grayscale)
+    for(i in ba.indices) {
+        Log.d("BA", "BA ${ba[i]} ")
+    }
+    Log.d("ROWBYTES", "${grayscale.rowBytes} ")
 
+    // return inputTensor
+}
+
+fun predict(model: Module): String{ //, normalized: Tensor) : String{
+    val fontNames = arrayOf("Lato-Regular", "LiberationSans-Regular", "LiberationSerif-Regular")
+//    val output = model.forward(IValue.from(normalized)).toTensor()
+//    val scores: FloatArray = output.dataAsFloatArray
+//    var largest = scores[0]
+//    var largestIdx = 0
+//    for (i in scores.indices) {
+//        if (largest < scores[i])
+//            largest = scores[i]
+//            largestIdx = i
+//    }
+    return fontNames[2]
+}
+
+fun convertToByteArray(bitmap: Bitmap): ByteArray {
+    //minimum number of bytes that can be used to store this bitmap's pixels
+    val size = bitmap.byteCount
+
+    //allocate new instances which will hold bitmap
+    val buffer = ByteBuffer.allocate(size)
+    val bytes = ByteArray(size)
+
+    //copy the bitmap's pixels into the specified buffer
+    bitmap.copyPixelsToBuffer(buffer)
+
+    //rewinds buffer (buffer position is set to zero and the mark is discarded)
+    buffer.rewind()
+
+    //transfer bytes from buffer into the given destination array
+    buffer.get(bytes)
+
+    //return bitmap's pixels
+    return bytes
 }
 
